@@ -1,0 +1,7 @@
+app.db
+.env
+bin/
+*.exe
+*.out
+*.test
+/logs

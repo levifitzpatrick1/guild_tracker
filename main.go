@@ -18,10 +18,7 @@ import (
 var embedMigrations embed.FS
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal(err)
-	}
+	godotenv.Load()
 
 	lp := os.Getenv("LOG_FILE_PATH")
 	if lp == "" {
@@ -42,7 +39,7 @@ func main() {
 	t := os.Getenv("DISCORD_TOKEN")
 	gid := os.Getenv("DISCORD_GUILD_ID")
 
-	dg, err := discordgo.New("Bot" + t)
+	dg, err := discordgo.New("Bot " + t)
 	if err != nil {
 		l.Fatal("Error creating discord session: %v", err)
 	}

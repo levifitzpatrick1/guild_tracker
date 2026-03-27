@@ -7,17 +7,16 @@ package dbstore
 
 import (
 	"context"
-	"database/sql"
 )
 
 const getCharactersForRecipe = `-- name: GetCharactersForRecipe :many
-SELECT c.guid, c.name, c.server, c.guild, c.score, c.level FROM characters c
-JOIN character_recipes cr ON c.guid = cr.character_id
+SELECT c.id, c.name, c.server, c.guild, c.score, c.level FROM characters c
+JOIN character_recipes cr ON c.id = cr.character_id
 WHERE cr.recipe_id = ?
 ORDER BY c.name ASC
 `
 
-func (q *Queries) GetCharactersForRecipe(ctx context.Context, recipeID sql.NullString) ([]Character, error) {
+func (q *Queries) GetCharactersForRecipe(ctx context.Context, recipeID int64) ([]Character, error) {
 	rows, err := q.db.QueryContext(ctx, getCharactersForRecipe, recipeID)
 	if err != nil {
 		return nil, err
@@ -27,7 +26,7 @@ func (q *Queries) GetCharactersForRecipe(ctx context.Context, recipeID sql.NullS
 	for rows.Next() {
 		var i Character
 		if err := rows.Scan(
-			&i.Guid,
+			&i.ID,
 			&i.Name,
 			&i.Server,
 			&i.Guild,
@@ -49,24 +48,22 @@ func (q *Queries) GetCharactersForRecipe(ctx context.Context, recipeID sql.NullS
 
 const getMaterialsForRecipe = `-- name: GetMaterialsForRecipe :many
 SELECT
-    m.guid,
-    m.wow_id,
+    m.id,
     m.name,
     rm.quantity
 FROM materials m
-JOIN recipe_materials rm ON m.guid = rm.material_id
+JOIN recipe_materials rm ON m.id = rm.material_id
 WHERE rm.recipe_id = ?
 ORDER BY m.name ASC
 `
 
 type GetMaterialsForRecipeRow struct {
-	Guid     string
-	WowID    int64
+	ID       int64
 	Name     string
 	Quantity int64
 }
 
-func (q *Queries) GetMaterialsForRecipe(ctx context.Context, recipeID sql.NullString) ([]GetMaterialsForRecipeRow, error) {
+func (q *Queries) GetMaterialsForRecipe(ctx context.Context, recipeID int64) ([]GetMaterialsForRecipeRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMaterialsForRecipe, recipeID)
 	if err != nil {
 		return nil, err
@@ -75,12 +72,53 @@ func (q *Queries) GetMaterialsForRecipe(ctx context.Context, recipeID sql.NullSt
 	var items []GetMaterialsForRecipeRow
 	for rows.Next() {
 		var i GetMaterialsForRecipeRow
-		if err := rows.Scan(
-			&i.Guid,
-			&i.WowID,
-			&i.Name,
-			&i.Quantity,
-		); err != nil {
+		if err := rows.Scan(&i.ID, &i.Name, &i.Quantity); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRecipeByID = `-- name: GetRecipeByID :one
+SELECT
+    id, name, profession
+FROM recipes
+WHERE id = ?
+`
+
+func (q *Queries) GetRecipeByID(ctx context.Context, id int64) (Recipe, error) {
+	row := q.db.QueryRowContext(ctx, getRecipeByID, id)
+	var i Recipe
+	err := row.Scan(&i.ID, &i.Name, &i.Profession)
+	return i, err
+}
+
+const getRecipesForCharacter = `-- name: GetRecipesForCharacter :many
+SELECT
+    r.id, r.name, r.profession
+FROM recipes r
+JOIN character_recipes cr ON r.id = cr.recipe_id
+WHERE cr.character_id = ?
+ORDER BY r.name ASC
+`
+
+func (q *Queries) GetRecipesForCharacter(ctx context.Context, characterID int64) ([]Recipe, error) {
+	rows, err := q.db.QueryContext(ctx, getRecipesForCharacter, characterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Recipe
+	for rows.Next() {
+		var i Recipe
+		if err := rows.Scan(&i.ID, &i.Name, &i.Profession); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -95,8 +133,8 @@ func (q *Queries) GetMaterialsForRecipe(ctx context.Context, recipeID sql.NullSt
 }
 
 const searchRecipes = `-- name: SearchRecipes :many
-SELECT guid, wow_id, name, profession FROM recipes
-WHERE name LIKE ?
+SELECT id, name, profession FROM recipes
+WHERE name = ?
 ORDER BY name ASC
 `
 
@@ -109,12 +147,7 @@ func (q *Queries) SearchRecipes(ctx context.Context, name string) ([]Recipe, err
 	var items []Recipe
 	for rows.Next() {
 		var i Recipe
-		if err := rows.Scan(
-			&i.Guid,
-			&i.WowID,
-			&i.Name,
-			&i.Profession,
-		); err != nil {
+		if err := rows.Scan(&i.ID, &i.Name, &i.Profession); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

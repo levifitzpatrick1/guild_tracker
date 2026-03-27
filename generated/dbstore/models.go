@@ -9,7 +9,7 @@ import (
 )
 
 type Character struct {
-	Guid   string
+	ID     int64
 	Name   string
 	Server string
 	Guild  sql.NullString
@@ -18,25 +18,23 @@ type Character struct {
 }
 
 type CharacterRecipe struct {
-	CharacterID sql.NullString
-	RecipeID    sql.NullString
+	CharacterID int64
+	RecipeID    int64
 }
 
 type Material struct {
-	Guid  string
-	WowID int64
-	Name  string
+	ID   int64
+	Name string
 }
 
 type Recipe struct {
-	Guid       string
-	WowID      int64
+	ID         int64
 	Name       string
 	Profession string
 }
 
 type RecipeMaterial struct {
-	RecipeID   sql.NullString
-	MaterialID sql.NullString
+	RecipeID   int64
+	MaterialID int64
 	Quantity   int64
 }

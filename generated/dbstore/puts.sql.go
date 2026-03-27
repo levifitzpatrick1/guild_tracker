@@ -10,54 +10,23 @@ import (
 	"database/sql"
 )
 
-const addMaterialToRecipe = `-- name: AddMaterialToRecipe :exec
-INSERT INTO recipe_materials (
-    recipe_id, material_id, quantity
-) VALUES (
-    ?, ?, ?
-)
-`
-
-type AddMaterialToRecipeParams struct {
-	RecipeID   sql.NullString
-	MaterialID sql.NullString
-	Quantity   int64
-}
-
-func (q *Queries) AddMaterialToRecipe(ctx context.Context, arg AddMaterialToRecipeParams) error {
-	_, err := q.db.ExecContext(ctx, addMaterialToRecipe, arg.RecipeID, arg.MaterialID, arg.Quantity)
-	return err
-}
-
-const addRecipeToCharacter = `-- name: AddRecipeToCharacter :exec
-INSERT INTO character_recipes (
-    character_id, recipe_id
-) VALUES (
-    ?, ?
-)
-`
-
-type AddRecipeToCharacterParams struct {
-	CharacterID sql.NullString
-	RecipeID    sql.NullString
-}
-
-func (q *Queries) AddRecipeToCharacter(ctx context.Context, arg AddRecipeToCharacterParams) error {
-	_, err := q.db.ExecContext(ctx, addRecipeToCharacter, arg.CharacterID, arg.RecipeID)
-	return err
-}
-
-const createCharacter = `-- name: CreateCharacter :one
+const upsertCharacter = `-- name: UpsertCharacter :one
 INSERT INTO characters (
-    guid, name, server, guild, score, level
+    id, name, server, guild, score, level
 ) VALUES (
     ?, ?, ?, ?, ?, ?
 )
-RETURNING guid, name, server, guild, score, level
+ON CONFLICT(id) DO UPDATE SET
+    name = excluded.name,
+    server = excluded.server,
+    guild = excluded.guild,
+    score = excluded.score,
+    level = excluded.level
+RETURNING id, name, server, guild, score, level
 `
 
-type CreateCharacterParams struct {
-	Guid   string
+type UpsertCharacterParams struct {
+	ID     int64
 	Name   string
 	Server string
 	Guild  sql.NullString
@@ -65,9 +34,9 @@ type CreateCharacterParams struct {
 	Level  int64
 }
 
-func (q *Queries) CreateCharacter(ctx context.Context, arg CreateCharacterParams) (Character, error) {
-	row := q.db.QueryRowContext(ctx, createCharacter,
-		arg.Guid,
+func (q *Queries) UpsertCharacter(ctx context.Context, arg UpsertCharacterParams) (Character, error) {
+	row := q.db.QueryRowContext(ctx, upsertCharacter,
+		arg.ID,
 		arg.Name,
 		arg.Server,
 		arg.Guild,
@@ -76,7 +45,7 @@ func (q *Queries) CreateCharacter(ctx context.Context, arg CreateCharacterParams
 	)
 	var i Character
 	err := row.Scan(
-		&i.Guid,
+		&i.ID,
 		&i.Name,
 		&i.Server,
 		&i.Guild,
@@ -86,57 +55,90 @@ func (q *Queries) CreateCharacter(ctx context.Context, arg CreateCharacterParams
 	return i, err
 }
 
-const createMaterial = `-- name: CreateMaterial :one
-INSERT INTO materials (
-    guid, wow_id, name
+const upsertCharacterRecipe = `-- name: UpsertCharacterRecipe :exec
+INSERT INTO character_recipes (
+    character_id, recipe_id
 ) VALUES (
-    ?, ?, ?
+    ?, ?
 )
-RETURNING guid, wow_id, name
+ON CONFLICT(character_id, recipe_id) DO NOTHING
 `
 
-type CreateMaterialParams struct {
-	Guid  string
-	WowID int64
-	Name  string
+type UpsertCharacterRecipeParams struct {
+	CharacterID int64
+	RecipeID    int64
 }
 
-func (q *Queries) CreateMaterial(ctx context.Context, arg CreateMaterialParams) (Material, error) {
-	row := q.db.QueryRowContext(ctx, createMaterial, arg.Guid, arg.WowID, arg.Name)
+func (q *Queries) UpsertCharacterRecipe(ctx context.Context, arg UpsertCharacterRecipeParams) error {
+	_, err := q.db.ExecContext(ctx, upsertCharacterRecipe, arg.CharacterID, arg.RecipeID)
+	return err
+}
+
+const upsertMaterial = `-- name: UpsertMaterial :one
+INSERT INTO materials (
+    id, name
+) VALUES (
+    ?, ?
+)
+ON CONFLICT(id) DO UPDATE SET
+    name = excluded.name
+RETURNING id, name
+`
+
+type UpsertMaterialParams struct {
+	ID   int64
+	Name string
+}
+
+func (q *Queries) UpsertMaterial(ctx context.Context, arg UpsertMaterialParams) (Material, error) {
+	row := q.db.QueryRowContext(ctx, upsertMaterial, arg.ID, arg.Name)
 	var i Material
-	err := row.Scan(&i.Guid, &i.WowID, &i.Name)
+	err := row.Scan(&i.ID, &i.Name)
 	return i, err
 }
 
-const createRecipe = `-- name: CreateRecipe :one
+const upsertRecipe = `-- name: UpsertRecipe :one
 INSERT INTO recipes (
-    guid, wow_id, name, profession
+    id, name, profession
 ) VALUES (
-    ?, ?, ?, ?
+    ?, ?, ?
 )
-RETURNING guid, wow_id, name, profession
+ON CONFLICT(id) DO UPDATE SET
+    name = excluded.name,
+    profession = excluded.profession
+RETURNING id, name, profession
 `
 
-type CreateRecipeParams struct {
-	Guid       string
-	WowID      int64
+type UpsertRecipeParams struct {
+	ID         int64
 	Name       string
 	Profession string
 }
 
-func (q *Queries) CreateRecipe(ctx context.Context, arg CreateRecipeParams) (Recipe, error) {
-	row := q.db.QueryRowContext(ctx, createRecipe,
-		arg.Guid,
-		arg.WowID,
-		arg.Name,
-		arg.Profession,
-	)
+func (q *Queries) UpsertRecipe(ctx context.Context, arg UpsertRecipeParams) (Recipe, error) {
+	row := q.db.QueryRowContext(ctx, upsertRecipe, arg.ID, arg.Name, arg.Profession)
 	var i Recipe
-	err := row.Scan(
-		&i.Guid,
-		&i.WowID,
-		&i.Name,
-		&i.Profession,
-	)
+	err := row.Scan(&i.ID, &i.Name, &i.Profession)
 	return i, err
+}
+
+const upsertRecipeMaterial = `-- name: UpsertRecipeMaterial :exec
+INSERT INTO recipe_materials (
+    recipe_id, material_id, quantity
+) VALUES (
+    ?, ?, ?
+)
+ON CONFLICT(recipe_id, material_id) DO UPDATE SET
+    quantity = excluded.quantity
+`
+
+type UpsertRecipeMaterialParams struct {
+	RecipeID   int64
+	MaterialID int64
+	Quantity   int64
+}
+
+func (q *Queries) UpsertRecipeMaterial(ctx context.Context, arg UpsertRecipeMaterialParams) error {
+	_, err := q.db.ExecContext(ctx, upsertRecipeMaterial, arg.RecipeID, arg.MaterialID, arg.Quantity)
+	return err
 }

@@ -14,7 +14,7 @@ type Logger struct {
 	file           *os.File
 }
 
-func New(lb string) (*Logger, error) {
+func NewLogger(lb string) (*Logger, error) {
 	if err := os.MkdirAll(lb, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create log directory: %w", err)
 	}

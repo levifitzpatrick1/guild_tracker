@@ -1,37 +1,51 @@
--- name: CreateMaterial :one
+-- name: UpsertMaterial :one
 INSERT INTO materials (
-    guid, wow_id, name
+    id, name
+) VALUES (
+    ?, ?
+)
+ON CONFLICT(id) DO UPDATE SET
+    name = excluded.name
+RETURNING *;
+
+-- name: UpsertRecipe :one
+INSERT INTO recipes (
+    id, name, profession
 ) VALUES (
     ?, ?, ?
 )
+ON CONFLICT(id) DO UPDATE SET
+    name = excluded.name,
+    profession = excluded.profession
 RETURNING *;
 
--- name: CreateRecipe :one
-INSERT INTO recipes (
-    guid, wow_id, name, profession
-) VALUES (
-    ?, ?, ?, ?
-)
-RETURNING *;
-
--- name: CreateCharacter :one
+-- name: UpsertCharacter :one
 INSERT INTO characters (
-    guid, name, server, guild, score, level
+    id, name, server, guild, score, level
 ) VALUES (
     ?, ?, ?, ?, ?, ?
 )
+ON CONFLICT(id) DO UPDATE SET
+    name = excluded.name,
+    server = excluded.server,
+    guild = excluded.guild,
+    score = excluded.score,
+    level = excluded.level
 RETURNING *;
 
--- name: AddMaterialToRecipe :exec
+-- name: UpsertRecipeMaterial :exec
 INSERT INTO recipe_materials (
     recipe_id, material_id, quantity
 ) VALUES (
     ?, ?, ?
-);
+)
+ON CONFLICT(recipe_id, material_id) DO UPDATE SET
+    quantity = excluded.quantity;
 
--- name: AddRecipeToCharacter :exec
+-- name: UpsertCharacterRecipe :exec
 INSERT INTO character_recipes (
     character_id, recipe_id
 ) VALUES (
     ?, ?
-);
+)
+ON CONFLICT(character_id, recipe_id) DO NOTHING;

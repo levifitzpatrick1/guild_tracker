@@ -1,19 +1,17 @@
 -- +goose Up
 CREATE TABLE materials (
-    guid TEXT PRIMARY KEY,
-    wow_id INTEGER NOT NULL,
+    id INTEGER PRIMARY KEY,
     name TEXT NOT NULL
 ) WITHOUT ROWID;
 
 CREATE TABLE recipes (
-    guid TEXT PRIMARY KEY,
-    wow_id INTEGER NOT NULL,
+    id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     profession TEXT NOT NULL
 ) WITHOUT ROWID;
 
 CREATE TABLE characters (
-    guid TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     server TEXT NOT NULL,
     guild TEXT,
@@ -22,8 +20,8 @@ CREATE TABLE characters (
 ) WITHOUT ROWID;
 
 CREATE TABLE recipe_materials (
-    recipe_id TEXT,
-    material_id TEXT,
+    recipe_id INTEGER NOT NULL,
+    material_id INTEGER NOT NULL,
     quantity INTEGER NOT NULL,
     PRIMARY KEY (recipe_id, material_id),
     FOREIGN KEY (recipe_id) REFERENCES recipes(guid) ON DELETE CASCADE,
@@ -31,8 +29,8 @@ CREATE TABLE recipe_materials (
 ) WITHOUT ROWID;
 
 CREATE TABLE character_recipes (
-    character_id TEXT,
-    recipe_id TEXT,
+    character_id INTEGER NOT NULL,
+    recipe_id INTEGER NOT NULL,
     PRIMARY KEY (character_id, recipe_id),
     FOREIGN KEY (character_id) REFERENCES characters(guid) ON DELETE CASCADE,
     FOREIGN KEY (recipe_id) REFERENCES recipes(guid) ON DELETE CASCADE

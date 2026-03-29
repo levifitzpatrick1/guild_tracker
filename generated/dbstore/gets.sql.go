@@ -46,6 +46,40 @@ func (q *Queries) GetCharactersForRecipe(ctx context.Context, recipeID int64) ([
 	return items, nil
 }
 
+const getCraftingSlotsForRecipe = `-- name: GetCraftingSlotsForRecipe :many
+SELECT slot_name, display_order FROM recipe_crafting_slots
+WHERE recipe_id = ?
+ORDER BY display_order ASC
+`
+
+type GetCraftingSlotsForRecipeRow struct {
+	SlotName     string
+	DisplayOrder int64
+}
+
+func (q *Queries) GetCraftingSlotsForRecipe(ctx context.Context, recipeID int64) ([]GetCraftingSlotsForRecipeRow, error) {
+	rows, err := q.db.QueryContext(ctx, getCraftingSlotsForRecipe, recipeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetCraftingSlotsForRecipeRow
+	for rows.Next() {
+		var i GetCraftingSlotsForRecipeRow
+		if err := rows.Scan(&i.SlotName, &i.DisplayOrder); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getMaterialsForRecipe = `-- name: GetMaterialsForRecipe :many
 SELECT
     m.id,
@@ -134,12 +168,12 @@ func (q *Queries) GetRecipesForCharacter(ctx context.Context, characterID int64)
 
 const searchRecipes = `-- name: SearchRecipes :many
 SELECT id, name, profession FROM recipes
-WHERE name = ?
+WHERE LOWER(REPLACE(name, '''', '')) LIKE '%' || LOWER(REPLACE(?, '''', '')) || '%'
 ORDER BY name ASC
 `
 
-func (q *Queries) SearchRecipes(ctx context.Context, name string) ([]Recipe, error) {
-	rows, err := q.db.QueryContext(ctx, searchRecipes, name)
+func (q *Queries) SearchRecipes(ctx context.Context, replace string) ([]Recipe, error) {
+	rows, err := q.db.QueryContext(ctx, searchRecipes, replace)
 	if err != nil {
 		return nil, err
 	}

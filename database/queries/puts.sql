@@ -49,3 +49,9 @@ INSERT INTO character_recipes (
     ?, ?
 )
 ON CONFLICT(character_id, recipe_id) DO NOTHING;
+
+-- name: UpsertRecipeCraftingSlot :exec
+INSERT INTO recipe_crafting_slots (recipe_id, slot_name, display_order)
+VALUES (?, ?, ?)
+ON CONFLICT(recipe_id, display_order) DO UPDATE SET
+    slot_name = excluded.slot_name;

@@ -69,8 +69,23 @@ func (e *Env) Craft(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		matStr = strings.Join(matStrings, "\n")
 	}
 
-	responseContent := fmt.Sprintf("**Recipe:** %s (%s)\n\n**Crafters:** %s\n\n**Materials Required:**\n%s",
-		recipe.Name, recipe.Profession, crafterStr, matStr)
+	slots, err := e.DB.GetCraftingSlotsForRecipe(ctx, recipe.ID)
+	if err != nil {
+		e.Logger.Error("Failed to fetch crafting slots for recipe %d: %v", recipe.ID, err)
+	}
+
+	slotNames := []string{}
+	for _, slot := range slots {
+		slotNames = append(slotNames, slot.SlotName)
+	}
+
+	slotStr := ""
+	if len(slotNames) > 0 {
+		slotStr = fmt.Sprintf("\n\n**Optional Reagent Slots:**\n- %s", strings.Join(slotNames, "\n- "))
+	}
+
+	responseContent := fmt.Sprintf("**Recipe:** %s (%s)\n\n**Crafters:** %s\n\n**Materials Required:**\n%s%s",
+		recipe.Name, recipe.Profession, crafterStr, matStr, slotStr)
 
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,

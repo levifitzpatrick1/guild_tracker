@@ -21,7 +21,7 @@ func UpdateCharactersInGuild(ctx context.Context, name, server string, b *battle
 		params := dbstore.UpsertCharacterParams{
 			ID:     int64(member.Character.ID),
 			Name:   member.Character.Name,
-			Server: member.Character.Realm.Name,
+			Server: member.Character.Realm.Slug,
 			Level:  int64(member.Character.Level),
 			Guild: sql.NullString{
 				String: name,
@@ -37,7 +37,6 @@ func UpdateCharactersInGuild(ctx context.Context, name, server string, b *battle
 			b.Logger.Error("failed to upsert character %s: %v", member.Character.Name, err)
 			continue
 		}
-		b.Logger.Info("upserted character: %s", member.Character.Name)
 	}
 
 	return roster.Members, nil

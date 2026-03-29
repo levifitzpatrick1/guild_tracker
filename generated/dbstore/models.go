@@ -33,6 +33,12 @@ type Recipe struct {
 	Profession string
 }
 
+type RecipeCraftingSlot struct {
+	RecipeID     int64
+	SlotName     string
+	DisplayOrder int64
+}
+
 type RecipeMaterial struct {
 	RecipeID   int64
 	MaterialID int64

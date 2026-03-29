@@ -19,6 +19,14 @@ CREATE TABLE characters (
     level INTEGER NOT NULL
 ) WITHOUT ROWID;
 
+CREATE TABLE recipe_crafting_slots (
+    recipe_id INTEGER NOT NULL,
+    slot_name TEXT NOT NULL,
+    display_order INTEGER NOT NULL,
+    PRIMARY KEY (recipe_id, display_order),
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+) WITHOUT ROWID;
+
 CREATE TABLE recipe_materials (
     recipe_id INTEGER NOT NULL,
     material_id INTEGER NOT NULL,
@@ -39,6 +47,7 @@ CREATE TABLE character_recipes (
 -- +goose Down
 DROP TABLE character_recipes;
 DROP TABLE recipe_materials;
+DROP TABLE recipe_crafting_slots;
 DROP TABLE characters;
 DROP TABLE recipes;
 DROP TABLE materials;

@@ -14,6 +14,17 @@ func UpdateRecipeMaterials(ctx context.Context, id int64, b *battlenet.Battlenet
 		return fmt.Errorf("Failed to get recipe details: %w", err)
 	}
 
+	for _, slot := range recipeDetails.ModifiedCraftingSlots {
+		err = q.UpsertRecipeCraftingSlot(ctx, dbstore.UpsertRecipeCraftingSlotParams{
+			RecipeID:     id,
+			SlotName:     slot.SlotType.Name,
+			DisplayOrder: int64(slot.DisplayOrder),
+		})
+		if err != nil {
+			b.Logger.Error("Failed to upsert crafting slot for recipe %d: %v", id, err)
+		}
+	}
+
 	for _, reagent := range recipeDetails.Reagents {
 
 		_, err := q.UpsertMaterial(ctx, dbstore.UpsertMaterialParams{
@@ -34,8 +45,6 @@ func UpdateRecipeMaterials(ctx context.Context, id int64, b *battlenet.Battlenet
 			b.Logger.Error("Failed to link material %s to recipe: %v", reagent.Reagent.Name, err)
 			continue
 		}
-
-		b.Logger.Info("Added material %s to recipe %s", reagent.Reagent.Name, recipeDetails.Name)
 	}
 
 	return nil

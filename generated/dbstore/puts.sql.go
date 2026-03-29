@@ -122,6 +122,24 @@ func (q *Queries) UpsertRecipe(ctx context.Context, arg UpsertRecipeParams) (Rec
 	return i, err
 }
 
+const upsertRecipeCraftingSlot = `-- name: UpsertRecipeCraftingSlot :exec
+INSERT INTO recipe_crafting_slots (recipe_id, slot_name, display_order)
+VALUES (?, ?, ?)
+ON CONFLICT(recipe_id, display_order) DO UPDATE SET
+    slot_name = excluded.slot_name
+`
+
+type UpsertRecipeCraftingSlotParams struct {
+	RecipeID     int64
+	SlotName     string
+	DisplayOrder int64
+}
+
+func (q *Queries) UpsertRecipeCraftingSlot(ctx context.Context, arg UpsertRecipeCraftingSlotParams) error {
+	_, err := q.db.ExecContext(ctx, upsertRecipeCraftingSlot, arg.RecipeID, arg.SlotName, arg.DisplayOrder)
+	return err
+}
+
 const upsertRecipeMaterial = `-- name: UpsertRecipeMaterial :exec
 INSERT INTO recipe_materials (
     recipe_id, material_id, quantity

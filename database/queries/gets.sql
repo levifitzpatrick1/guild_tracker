@@ -1,6 +1,6 @@
 -- name: SearchRecipes :many
 SELECT * FROM recipes
-WHERE name = ?
+WHERE LOWER(REPLACE(name, '''', '')) LIKE '%' || LOWER(REPLACE(?, '''', '')) || '%'
 ORDER BY name ASC;
 
 -- name: GetCharactersForRecipe :many
@@ -32,3 +32,8 @@ FROM recipes r
 JOIN character_recipes cr ON r.id = cr.recipe_id
 WHERE cr.character_id = ?
 ORDER BY r.name ASC;
+
+-- name: GetCraftingSlotsForRecipe :many
+SELECT slot_name, display_order FROM recipe_crafting_slots
+WHERE recipe_id = ?
+ORDER BY display_order ASC;

@@ -32,7 +32,10 @@ func UpdateRecipeMaterials(ctx context.Context, id int64, b *battlenet.Battlenet
 		})
 		if err != nil {
 			b.Logger.Error("Failed to link material %s to recipe: %v", reagent.Reagent.Name, err)
+			continue
 		}
+
+		b.Logger.Info("Added material %s to recipe %s", reagent.Reagent.Name, recipeDetails.Name)
 	}
 
 	return nil

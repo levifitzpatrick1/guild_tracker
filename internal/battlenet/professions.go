@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/levifitzpatrick1/guild_tracker/internal/battlenet/responseStructs"
@@ -12,7 +13,7 @@ import (
 var characterProfessions string = "/profile/wow/character/%s/%s/professions"
 
 func (b *Battlenet) GetCharacterProfessions(name, server string) (*responseStructs.CharacterProfessions, error) {
-	name = ConvertToSlug(name)
+	name = url.PathEscape(ConvertToSlug(name))
 	server = ConvertToSlug(server)
 	locale := fmt.Sprintf("en_%s", strings.ToUpper(b.Region))
 	namespace := fmt.Sprintf("profile-%s", b.Region)
@@ -34,6 +35,11 @@ func (b *Battlenet) GetCharacterProfessions(name, server string) (*responseStruc
 		return nil, err
 	}
 	defer ret.Body.Close()
+
+	if ret.StatusCode != http.StatusOK {
+		b.Logger.Info("uri: %s", req.URL.Path)
+		return nil, fmt.Errorf("bnet API returned status: %d", ret.StatusCode)
+	}
 
 	var professions responseStructs.CharacterProfessions
 	if err := json.NewDecoder(ret.Body).Decode(&professions); err != nil {

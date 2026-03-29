@@ -9,7 +9,7 @@ import (
 	"github.com/levifitzpatrick1/guild_tracker/internal/battlenet/responseStructs"
 )
 
-var recipeData string = "/data/wpw/recipe/%d"
+var recipeData string = "/data/wow/recipe/%d"
 
 func (b *Battlenet) GetRecipeData(id int64) (*responseStructs.RecipeDetails, error) {
 	locale := fmt.Sprintf("en_%s", strings.ToUpper(b.Region))
@@ -32,6 +32,10 @@ func (b *Battlenet) GetRecipeData(id int64) (*responseStructs.RecipeDetails, err
 		return nil, err
 	}
 	defer ret.Body.Close()
+
+	if ret.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("bnet api returned status: %d for recipe %d", ret.StatusCode, id)
+	}
 
 	var recipeDetails responseStructs.RecipeDetails
 	if err := json.NewDecoder(ret.Body).Decode(&recipeDetails); err != nil {

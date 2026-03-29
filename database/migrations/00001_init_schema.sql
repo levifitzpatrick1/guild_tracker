@@ -24,16 +24,16 @@ CREATE TABLE recipe_materials (
     material_id INTEGER NOT NULL,
     quantity INTEGER NOT NULL,
     PRIMARY KEY (recipe_id, material_id),
-    FOREIGN KEY (recipe_id) REFERENCES recipes(guid) ON DELETE CASCADE,
-    FOREIGN KEY (material_id) REFERENCES materials(guid) ON DELETE CASCADE
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+    FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE CASCADE
 ) WITHOUT ROWID;
 
 CREATE TABLE character_recipes (
     character_id INTEGER NOT NULL,
     recipe_id INTEGER NOT NULL,
     PRIMARY KEY (character_id, recipe_id),
-    FOREIGN KEY (character_id) REFERENCES characters(guid) ON DELETE CASCADE,
-    FOREIGN KEY (recipe_id) REFERENCES recipes(guid) ON DELETE CASCADE
+    FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE,
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
 ) WITHOUT ROWID;
 
 -- +goose Down

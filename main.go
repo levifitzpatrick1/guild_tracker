@@ -75,15 +75,16 @@ func main() {
 	// create the enviorment for the handlers. this just
 	// lets us create funcs without passing in the queries
 	// and logger to each of them.
-	env := handlers.New(q, l)
+	env := handlers.New(q, l, bn)
 
 	// the router handles the commands, the structure acting
 	// similar to the mux router for http. We can register
 	// commands from the 'handlers/' folder
 	r := wrappers.NewRouter(q, l)
 
-	// adding the ping command as a quick test
 	r.Handle(handlers.PingCommand, env.Ping)
+	r.Handle(handlers.CraftCommand, env.Craft)
+	r.Handle(handlers.UpdateCommand, env.Update)
 
 	// since our router handles all the interaction creation
 	// we can just pass the routers on interaction into the
@@ -93,7 +94,7 @@ func main() {
 	if err := dg.Open(); err != nil {
 		l.Fatal("Error opening discord connection: %v", err)
 	}
-	
+
 	if err := scheduler.Start(l, q, bn); err != nil {
 		l.Error("Failed to start daily schediler: %v", err)
 	}

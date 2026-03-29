@@ -5,6 +5,7 @@ import (
 	"os"
 	"sync"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/levifitzpatrick1/guild_tracker/generated/dbstore"
 	"github.com/levifitzpatrick1/guild_tracker/internal/battlenet"

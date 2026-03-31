@@ -2,9 +2,7 @@ package battlenet
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"os"
 )
 
 // Struct to collect the API response from bnet
@@ -17,17 +15,11 @@ type TokenResponse struct {
 
 // Fetches the bearer token as a string using the oauth
 // credentials saved in the env vars.
-func getToken() (string, error) {
+func getToken(user, secret string) (string, error) {
 	uri := "https://oauth.battle.net/token"
 	req, err := http.NewRequest("POST", uri, nil)
 	if err != nil {
 		return "", err
-	}
-
-	user := os.Getenv("BATTLENET_CLIENT_ID")
-	secret := os.Getenv("BATTLENET_CLIENT_SECRET")
-	if user == "" || secret == "" {
-		return "", fmt.Errorf("Battlenet credentials not provided...")
 	}
 
 	req.SetBasicAuth(user, secret)

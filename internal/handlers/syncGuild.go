@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"os"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/levifitzpatrick1/guild_tracker/internal/battlenet/updates"
@@ -23,8 +22,8 @@ func (e *Env) SyncGuild(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	guildName := os.Getenv("GUILD_NAME")
-	server := os.Getenv("GUILD_SERVER")
+	guildName := e.Config.GuildName
+	server := e.Config.GuildServer
 
 	ctx := context.Background()
 

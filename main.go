@@ -8,8 +8,8 @@ import (
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/joho/godotenv"
 	"github.com/levifitzpatrick1/guild_tracker/internal/battlenet"
+	"github.com/levifitzpatrick1/guild_tracker/internal/config"
 	"github.com/levifitzpatrick1/guild_tracker/internal/handlers"
 	"github.com/levifitzpatrick1/guild_tracker/internal/scheduler"
 	"github.com/levifitzpatrick1/guild_tracker/internal/wrappers"
@@ -24,26 +24,15 @@ import (
 var embedMigrations embed.FS
 
 func main() {
-	// Load our enviormental variables
-	godotenv.Load()
-
-	logPath := os.Getenv("LOG_FILE_PATH")
-	if logPath == "" {
-		logPath = "./logs"
-	}
-	discordToken := os.Getenv("DISCORD_TOKEN")
-	if discordToken == "" {
-		log.Fatal("No discord token provided...")
-	}
-	serverID := os.Getenv("DISCORD_GUILD_ID")
-	if serverID == "" {
-		log.Fatal("No server ID provided...")
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Configuration error: %v", err)
 	}
 
 	// init the wrapper for the logger, with the path
 	// from .env. This is just a way to handle multiwritters,
 	// and potentially gotify later on for fatals
-	logWrapper, err := wrappers.NewLogger(logPath)
+	logWrapper, err := wrappers.NewLogger(cfg.LogFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -52,7 +41,7 @@ func main() {
 	// Create the battlenet instance. This keeps track of
 	// the region that the bot is being used for and handles
 	// the api token for the blizzard api
-	battlenet, err := battlenet.New(logWrapper)
+	battlenet, err := battlenet.New(logWrapper, cfg.Region, cfg.BnetClientID, cfg.BnetSecret)
 	if err != nil {
 		log.Fatalf("failed to make bnet: %v", err)
 	}
@@ -67,7 +56,7 @@ func main() {
 
 	// use the discord token to connect to discord,
 	// and create the discordgo wrapper
-	bot, err := discordgo.New("Bot " + discordToken)
+	bot, err := discordgo.New("Bot " + cfg.DiscordToken)
 	if err != nil {
 		logWrapper.Fatal("Error creating discord session: %v", err)
 	}
@@ -76,7 +65,7 @@ func main() {
 	// create the enviorment for the handlers. this just
 	// lets us create funcs without passing in the queries
 	// and logger to each of them.
-	env := handlers.New(q, logWrapper, battlenet)
+	env := handlers.New(q, logWrapper, battlenet, cfg)
 
 	// the router handles the commands, the structure acting
 	// similar to the mux router for http. We can register
@@ -99,7 +88,7 @@ func main() {
 		logWrapper.Fatal("Error opening discord connection: %v", err)
 	}
 
-	if err := scheduler.Start(logWrapper, q, battlenet); err != nil {
+	if err := scheduler.Start(logWrapper, q, battlenet, cfg.GuildName, cfg.GuildServer); err != nil {
 		logWrapper.Error("Failed to start daily schediler: %v", err)
 	}
 
@@ -111,7 +100,7 @@ func main() {
 
 	// register the router and all the commands to the
 	// bot and server
-	if err := router.Register(bot, serverID); err != nil {
+	if err := router.Register(bot, cfg.DiscordGuildID); err != nil {
 		logWrapper.Error("Failed to register commands: %v", err)
 	}
 

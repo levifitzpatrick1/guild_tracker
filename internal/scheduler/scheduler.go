@@ -1,7 +1,6 @@
 package scheduler
 
 import (
-	"os"
 	"time"
 	_ "time/tzdata"
 
@@ -11,7 +10,7 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-// Scheduler to 
+// Scheduler to
 type Scheduler struct {
 	Logger    *wrappers.Logger
 	Queries   *dbstore.Queries
@@ -21,7 +20,7 @@ type Scheduler struct {
 	Server    string
 }
 
-func Start(l *wrappers.Logger, q *dbstore.Queries, b *battlenet.Battlenet) error {
+func Start(l *wrappers.Logger, q *dbstore.Queries, b *battlenet.Battlenet, guildName, guildServer string) error {
 	loc, err := time.LoadLocation("America/New_York")
 	if err != nil {
 		return err
@@ -32,8 +31,8 @@ func Start(l *wrappers.Logger, q *dbstore.Queries, b *battlenet.Battlenet) error
 		Queries:   q,
 		Battlenet: b,
 		Cron:      cron.New(cron.WithLocation(loc)),
-		GuildName: os.Getenv("GUILD_NAME"),
-		Server:    os.Getenv("GUILD_SERVER"),
+		GuildName: guildName,
+		Server:    guildServer,
 	}
 
 	if _, err := s.Cron.AddFunc("0 8 * * *", s.dailyGuildSync); err != nil {

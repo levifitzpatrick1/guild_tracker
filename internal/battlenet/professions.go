@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/levifitzpatrick1/guild_tracker/internal/battlenet/responseStructs"
 )
@@ -32,10 +33,22 @@ func (b *Battlenet) GetCharacterProfessions(name, server string) (*responseStruc
 	q.Add("locale", locale)
 	req.URL.RawQuery = q.Encode()
 
-	ret, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
+	var ret *http.Response
+
+	for i := range 5 {
+		ret, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
+
+		if ret.StatusCode == 429 {
+			ret.Body.Close()
+			time.Sleep(time.Duration(1<<i) * time.Second)
+			continue
+		}
+		break
 	}
+
 	defer ret.Body.Close()
 
 	if ret.StatusCode != http.StatusOK {

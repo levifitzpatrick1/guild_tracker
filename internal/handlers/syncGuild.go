@@ -9,7 +9,7 @@ import (
 )
 
 var SyncCommand = &discordgo.ApplicationCommand{
-	Name:        "Sync Guild",
+	Name:        "sync-guild",
 	Description: "Force a manual sync of the guild roster and professions",
 }
 
@@ -30,20 +30,16 @@ func (e *Env) SyncGuild(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	if err := updates.SyncGuild(ctx, guildName, server, e.Bnet, e.DB, e.Logger); err != nil {
 		e.Logger.Error("Sync failed: %v", err)
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "Failed to sync guild...",
-			},
+		_, _ = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
+			Content: "Failed to sync guild...",
 		})
 		return
 	}
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: "Sync complete!",
-		},
+	_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
+		Content: "Sync complete!",
 	})
-
+	if err != nil {
+		e.Logger.Error("Failed to send followup message: %v", err)
+	}
 }

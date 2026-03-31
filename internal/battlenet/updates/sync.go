@@ -23,7 +23,7 @@ func SyncGuild(ctx context.Context, guildName, server string, b *battlenet.Battl
 
 	var recipeCache sync.Map
 	var wg sync.WaitGroup
-	sem := make(chan struct{}, 5)
+	sem := make(chan struct{}, 20)
 	var mu sync.Mutex
 
 	for _, member := range members {

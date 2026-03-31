@@ -90,10 +90,6 @@ func main() {
 	router.Handle(handlers.CraftCommand, env.Craft)
 	router.Handle(handlers.SyncCommand, env.SyncGuild)
 
-	// register the router and all the commands to the
-	// bot and server
-	router.Register(bot, serverID)
-
 	// since our router handles all the interaction creation
 	// we can just pass the routers on interaction into the
 	// discordgo wrapper handler
@@ -112,7 +108,12 @@ func main() {
 	// This loops through our commands in the router and makes
 	// sure that they get added
 	logWrapper.Info("registering slash commands...")
-	router.Register(bot, serverID)
+
+	// register the router and all the commands to the
+	// bot and server
+	if err := router.Register(bot, serverID); err != nil {
+		logWrapper.Error("Failed to register commands: %v", err)
+	}
 
 	// basic don't end the bot until we hit 'ctrl+C'
 	logWrapper.Info("bot running...")

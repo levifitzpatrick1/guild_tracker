@@ -23,24 +23,30 @@ func UpdateCharacterProfessions(ctx context.Context, name, server string, b *bat
 			for _, recipe := range tier.KnownRecipes {
 				recipeID := int64(recipe.ID)
 
-				if _, exists := recipeCache.Load(recipeID); !exists {
+				doneCh := make(chan struct{})
 
+				actual, loaded := recipeCache.LoadOrStore(recipeID, doneCh)
+
+				if !loaded {
 					_, err := q.UpsertRecipe(ctx, dbstore.UpsertRecipeParams{
 						ID:         recipeID,
 						Name:       recipe.Name,
 						Profession: profession.Profession.Name,
 					})
+
 					if err != nil {
 						b.Logger.Error("Failed to upsert recipe %s: %v", recipe.Name, err)
-						continue
+						recipeCache.Delete(recipeID)
+					} else {
+						err = UpdateRecipeMaterials(ctx, recipeID, b, q)
+						if err != nil {
+							b.Logger.Error("Failed to update materials for recipe %s: %v", recipe.Name, err)
+							recipeCache.Delete(recipeID)
+						}
 					}
-
-					err = UpdateRecipeMaterials(ctx, recipeID, b, q)
-					if err != nil {
-						b.Logger.Error("Failed to update materials for recipe %s: %v", recipe.Name, err)
-					}
-
-					recipeCache.Store(recipeID, true)
+					close(doneCh)
+				} else {
+					<-actual.(chan struct{})
 				}
 
 				err = q.UpsertCharacterRecipe(ctx, dbstore.UpsertCharacterRecipeParams{

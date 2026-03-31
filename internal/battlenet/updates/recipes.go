@@ -8,6 +8,8 @@ import (
 	"github.com/levifitzpatrick1/guild_tracker/internal/battlenet"
 )
 
+// Given a specific recipe wow id, update the required materials and
+// quantities. This shouldn't change often but is run as a quick check.
 func UpdateRecipeMaterials(ctx context.Context, id int64, b *battlenet.Battlenet, q *dbstore.Queries) error {
 	recipeDetails, err := b.GetRecipeData(id)
 	if err != nil {

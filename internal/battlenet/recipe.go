@@ -11,6 +11,8 @@ import (
 
 var recipeData string = "/data/wow/recipe/%d"
 
+// Fetches the information on a specifc recipe based
+// off of its wow id.
 func (b *Battlenet) GetRecipeData(id int64) (*responseStructs.RecipeDetails, error) {
 	locale := fmt.Sprintf("en_%s", strings.ToUpper(b.Region))
 	namespace := fmt.Sprintf("static-%s", b.Region)

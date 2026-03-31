@@ -12,6 +12,8 @@ import (
 
 var characterProfessions string = "/profile/wow/character/%s/%s/professions"
 
+// Fetches the professions of a specific character given their name and
+// server
 func (b *Battlenet) GetCharacterProfessions(name, server string) (*responseStructs.CharacterProfessions, error) {
 	name = url.PathEscape(ConvertToSlug(name))
 	server = ConvertToSlug(server)

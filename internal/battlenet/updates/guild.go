@@ -10,6 +10,9 @@ import (
 	"github.com/levifitzpatrick1/guild_tracker/internal/battlenet/responseStructs"
 )
 
+// Updates the characters in the guild. This will mainly be updating names,
+// levels, and score as those change most frequently. Since we are using the
+// character id as a PK, we shouldn't get any orphaned characters via name/faction/race changes
 func UpdateCharactersInGuild(ctx context.Context, name, server string, b *battlenet.Battlenet, q *dbstore.Queries) ([]responseStructs.Member, error) {
 	roster, err := b.GetGuildRoster(name, server)
 	if err != nil {

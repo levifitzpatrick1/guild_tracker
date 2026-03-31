@@ -6,12 +6,14 @@ import (
 	"github.com/levifitzpatrick1/guild_tracker/internal/wrappers"
 )
 
+// Wrapper for required vars for the handler commands
 type Env struct {
 	DB     *dbstore.Queries
 	Logger *wrappers.Logger
 	Bnet   *battlenet.Battlenet
 }
 
+// Returns a new Env
 func New(db *dbstore.Queries, logger *wrappers.Logger, b *battlenet.Battlenet) *Env {
 	return &Env{
 		DB:     db,

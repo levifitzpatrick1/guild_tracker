@@ -10,6 +10,9 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+// Connect to the local sqlite database store. Use goose to update
+// the project with any data migrations, then return the sqlc queries
+// and the database pointer.
 func Connect(e embed.FS) (*dbstore.Queries, *sql.DB, error) {
 	db, err := sql.Open("sqlite", "./database/app.db?_busy_timeout=5000&_journal_mode=WAL")
 	if err != nil {

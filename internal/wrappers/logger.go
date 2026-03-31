@@ -9,34 +9,40 @@ import (
 	"time"
 )
 
+// Logging wrapper that handles multiwriting to a file
+// and output
 type Logger struct {
 	internalLogger *log.Logger
 	file           *os.File
 }
 
-func NewLogger(lb string) (*Logger, error) {
-	if err := os.MkdirAll(lb, 0755); err != nil {
+// Create a new logger, passing in the base folder where
+// the log should be stored. Log names are based on start
+// time in the format: logBase/YYMMDDHHMMSS.log
+func NewLogger(logBase string) (*Logger, error) {
+	if err := os.MkdirAll(logBase, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create log directory: %w", err)
 	}
 
 	timestamp := time.Now().Format("060102150405")
 	filename := fmt.Sprintf("%s.log", timestamp)
-	lfp := filepath.Join(lb, filename)
+	logFilePath := filepath.Join(logBase, filename)
 
-	f, err := os.OpenFile(lfp, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open log file: %w", err)
 	}
 
-	w := io.MultiWriter(os.Stdout, f)
-	l := log.New(w, "", log.Ldate|log.Ltime|log.Lshortfile)
+	writer := io.MultiWriter(os.Stdout, file)
+	logger := log.New(writer, "", log.Ldate|log.Ltime|log.Lshortfile)
 
 	return &Logger{
-		internalLogger: l,
-		file:           f,
+		internalLogger: logger,
+		file:           file,
 	}, nil
 }
 
+// Closes the file properly
 func (l *Logger) Close() error {
 	if l.file != nil {
 		return l.file.Close()
@@ -44,14 +50,18 @@ func (l *Logger) Close() error {
 	return nil
 }
 
+// Log information
 func (l *Logger) Info(format string, v ...interface{}) {
 	l.internalLogger.Printf("INFO: "+format, v...)
 }
 
+// Log non fatal errors
 func (l *Logger) Error(format string, v ...interface{}) {
 	l.internalLogger.Printf("ERROR: "+format, v...)
 }
 
+// Log fatal errors and shut down the bot
+// TODO: Add a gotify notification
 func (l *Logger) Fatal(format string, v ...interface{}) {
 	l.internalLogger.Printf("FATAL: "+format, v...)
 	l.Close()

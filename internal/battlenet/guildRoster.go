@@ -11,6 +11,8 @@ import (
 
 var guildRoster string = "/data/wow/guild/%s/%s/roster"
 
+// Fetches a collection of all the members of a guid
+// based off of guild name and server
 func (b *Battlenet) GetGuildRoster(name, server string) (*responseStructs.GuildRoster, error) {
 	name = ConvertToSlug(name)
 	server = ConvertToSlug(server)

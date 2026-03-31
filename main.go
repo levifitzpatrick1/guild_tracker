@@ -27,32 +27,32 @@ func main() {
 	// Load our enviormental variables
 	godotenv.Load()
 
-	lp := os.Getenv("LOG_FILE_PATH")
-	if lp == "" {
-		lp = "./logs"
+	logPath := os.Getenv("LOG_FILE_PATH")
+	if logPath == "" {
+		logPath = "./logs"
 	}
-	t := os.Getenv("DISCORD_TOKEN")
-	if t == "" {
+	discordToken := os.Getenv("DISCORD_TOKEN")
+	if discordToken == "" {
 		log.Fatal("No discord token provided...")
 	}
-	gid := os.Getenv("DISCORD_GUILD_ID")
-	if gid == "" {
+	serverID := os.Getenv("DISCORD_GUILD_ID")
+	if serverID == "" {
 		log.Fatal("No server ID provided...")
 	}
 
 	// init the wrapper for the logger, with the path
 	// from .env. This is just a way to handle multiwritters,
 	// and potentially gotify later on for fatals
-	l, err := wrappers.NewLogger(lp)
+	logWrapper, err := wrappers.NewLogger(logPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer l.Close()
+	defer logWrapper.Close()
 
 	// Create the battlenet instance. This keeps track of
 	// the region that the bot is being used for and handles
 	// the api token for the blizzard api
-	bn, err := battlenet.New(l)
+	battlenet, err := battlenet.New(logWrapper)
 	if err != nil {
 		log.Fatalf("failed to make bnet: %v", err)
 	}
@@ -61,74 +61,66 @@ func main() {
 	// and return the queries from sqlc
 	q, db, err := wrappers.Connect(embedMigrations)
 	if err != nil {
-		l.Fatal("Failed to connect to database: %v", err)
+		logWrapper.Fatal("Failed to connect to database: %v", err)
 	}
 	defer db.Close()
 
 	// use the discord token to connect to discord,
 	// and create the discordgo wrapper
-	dg, err := discordgo.New("Bot " + t)
+	bot, err := discordgo.New("Bot " + discordToken)
 	if err != nil {
-		l.Fatal("Error creating discord session: %v", err)
+		logWrapper.Fatal("Error creating discord session: %v", err)
 	}
+	defer bot.Close()
 
 	// create the enviorment for the handlers. this just
 	// lets us create funcs without passing in the queries
 	// and logger to each of them.
-	env := handlers.New(q, l, bn)
+	env := handlers.New(q, logWrapper, battlenet)
 
 	// the router handles the commands, the structure acting
 	// similar to the mux router for http. We can register
 	// commands from the 'handlers/' folder
-	r := wrappers.NewRouter(q, l)
+	router := wrappers.NewRouter(logWrapper)
+	defer router.Close()
 
-	r.Handle(handlers.PingCommand, env.Ping)
-	r.Handle(handlers.CraftCommand, env.Craft)
-	r.Handle(handlers.UpdateCommand, env.Update)
+	// add our command handlers and functions to the
+	// router
+	router.Handle(handlers.PingCommand, env.Ping)
+	router.Handle(handlers.CraftCommand, env.Craft)
+	router.Handle(handlers.SyncCommand, env.SyncGuild)
+
+	// register the router and all the commands to the
+	// bot and server
+	router.Register(bot, serverID)
 
 	// since our router handles all the interaction creation
 	// we can just pass the routers on interaction into the
 	// discordgo wrapper handler
-	dg.AddHandler(r.OnInteraction)
+	bot.AddHandler(router.OnInteraction)
 
-	if err := dg.Open(); err != nil {
-		l.Fatal("Error opening discord connection: %v", err)
+	if err := bot.Open(); err != nil {
+		logWrapper.Fatal("Error opening discord connection: %v", err)
 	}
 
-	if err := scheduler.Start(l, q, bn); err != nil {
-		l.Error("Failed to start daily schediler: %v", err)
+	if err := scheduler.Start(logWrapper, q, battlenet); err != nil {
+		logWrapper.Error("Failed to start daily schediler: %v", err)
 	}
 
 	// discord requires us to register any slash commands so that
 	// they actually show up on the server when you type the '/'.
 	// This loops through our commands in the router and makes
 	// sure that they get added
-	l.Info("registering slash commands...")
-	regCMDs := make([]*discordgo.ApplicationCommand, len(r.Commands))
-	for i, v := range r.Commands {
-		cmd, err := dg.ApplicationCommandCreate(dg.State.User.ID, gid, v)
-		if err != nil {
-			l.Fatal("cannot create '%v' command: %v", v.Name, err)
-		}
-		regCMDs[i] = cmd
-	}
+	logWrapper.Info("registering slash commands...")
+	router.Register(bot, serverID)
 
 	// basic don't end the bot until we hit 'ctrl+C'
-	l.Info("bot running...")
+	logWrapper.Info("bot running...")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
 
-	// when we shut down the bot, we clean up the commands from the
-	// server
-	l.Info("shutting down...")
-	for _, v := range regCMDs {
-		err := dg.ApplicationCommandDelete(dg.State.User.ID, gid, v.ID)
-		if err != nil {
-			l.Error("cannot delete '%v' command: %v", v.Name, err)
-		}
-	}
-
-	dg.Close()
-
+	// since everything is a defer, we don't need to worry about
+	// shutting anything down
+	logWrapper.Info("shutting down...")
 }

@@ -7,12 +7,16 @@ import (
 	"os"
 )
 
+// Struct to collect the API response from bnet
+// for the token
 type TokenResponse struct {
 	AccessToken string `json:"access_token"`
 	TokenType   string `json:"token_type"`
 	Expiration  int    `json:"expires_in"`
 }
 
+// Fetches the bearer token as a string using the oauth
+// credentials saved in the env vars.
 func getToken() (string, error) {
 	uri := "https://oauth.battle.net/token"
 	req, err := http.NewRequest("POST", uri, nil)

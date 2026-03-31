@@ -11,6 +11,8 @@ import (
 
 var guildData string = "/data/wow/guild/%s/%s"
 
+// Fetches the guild profile based on the guild name
+// and server
 func (b *Battlenet) GetGuildData(name, server string) (*responseStructs.GuildProfile, error) {
 	name = ConvertToSlug(name)
 	server = ConvertToSlug(server)

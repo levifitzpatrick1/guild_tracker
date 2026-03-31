@@ -9,6 +9,7 @@ var PingCommand = &discordgo.ApplicationCommand{
 	Description: "Check if the bot and database are connected",
 }
 
+// Basic command to check if the bot is running properly
 func (e *Env) Ping(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	e.Logger.Info("Ping command executed by %s", i.Member.User.Username)
 

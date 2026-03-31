@@ -8,6 +8,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+// The command structure for '/craft'. Takes in one required
+// item, 'item' which is the name of the desired craft
 var CraftCommand = &discordgo.ApplicationCommand{
 	Name:        "craft",
 	Description: "Find who can craft an item and the materials required",
@@ -21,6 +23,10 @@ var CraftCommand = &discordgo.ApplicationCommand{
 	},
 }
 
+// Builds a text response for the /Craft command. Finds the recipe
+// from the db (removes '-' and uppercase to make it a little more forgiving),
+// checks what characters can make it, checks what materials are needed,
+// then returns.
 func (e *Env) Craft(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	ctx := context.Background()
 

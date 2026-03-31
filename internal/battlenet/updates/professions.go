@@ -3,13 +3,16 @@ package updates
 import (
 	"context"
 	"fmt"
-	"sync" // <-- Add this
+	"sync"
 
 	"github.com/levifitzpatrick1/guild_tracker/generated/dbstore"
 	"github.com/levifitzpatrick1/guild_tracker/internal/battlenet"
 )
 
-func UpdateCharacterProfessions(ctx context.Context, name, server string, characterID int64, b *battlenet.Battlenet, q *dbstore.Queries, recipeCache *sync.Map) error {
+// Updates the characters professions and recipes
+// based on name and server. it passes a pointer to the
+// recipe map to help reduce lookups.
+func UpdateCharacterProfessions(ctx context.Context, name, server string, b *battlenet.Battlenet, q *dbstore.Queries, recipeCache *sync.Map) error {
 	character, err := b.GetCharacterProfessions(name, server)
 	if err != nil {
 		return fmt.Errorf("Failed to get character profession info: %w", err)
@@ -41,7 +44,7 @@ func UpdateCharacterProfessions(ctx context.Context, name, server string, charac
 				}
 
 				err = q.UpsertCharacterRecipe(ctx, dbstore.UpsertCharacterRecipeParams{
-					CharacterID: characterID,
+					CharacterID: int64(character.Character.ID),
 					RecipeID:    recipeID,
 				})
 				if err != nil {

@@ -16,6 +16,8 @@ type Config struct {
 	BnetSecret     string
 	GuildName      string
 	GuildServer    string
+	GotifyURL      string
+	GotifyToken    string
 }
 
 func Load() (*Config, error) {
@@ -30,6 +32,8 @@ func Load() (*Config, error) {
 		BnetSecret:     os.Getenv("BATTLENET_CLIENT_SECRET"),
 		GuildName:      os.Getenv("GUILD_NAME"),
 		GuildServer:    os.Getenv("GUILD_SERVER"),
+		GotifyURL:      os.Getenv("GOTIFY_URL"),
+		GotifyToken:    os.Getenv("GOTIFY_TOKEN"),
 	}
 
 	if cfg.DiscordToken == "" || cfg.DiscordGuildID == "" {

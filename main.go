@@ -32,7 +32,7 @@ func main() {
 	// init the wrapper for the logger, with the path
 	// from .env. This is just a way to handle multiwritters,
 	// and potentially gotify later on for fatals
-	logWrapper, err := wrappers.NewLogger(cfg.LogFilePath)
+	logWrapper, err := wrappers.NewLogger(cfg.LogFilePath, cfg.GotifyURL, cfg.GotifyToken)
 	if err != nil {
 		log.Fatal(err)
 	}

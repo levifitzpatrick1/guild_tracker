@@ -27,7 +27,7 @@ func SyncGuild(ctx context.Context, guildName, server string, b *battlenet.Battl
 	var mu sync.Mutex
 
 	for _, member := range members {
-		if member.Character.Level < 90 {
+		if member.Character.Level < 79 {
 			continue
 		}
 
